@@ -167,10 +167,10 @@ def readfile(_endpoint, filepath, userid):
       yield data[i:i+ctx['chunksize']]
 
 
-def writefile(_endpoint, filepath, userid, content, _noversion=0):
+def writefile(_endpoint, filepath, userid, content, _noversion=0, _nooverwrite=0):
   '''Write a file using the given userid as access token. The entire content is written
     and any pre-existing file is deleted (or moved to the previous version if supported).
-    The noversion flag is currently not supported.'''
+    The noversion and nooverwrite flags are currently not supported.'''
   tstart = time.time()
   # prepare endpoint
   req = cs3sp.InitiateFileUploadRequest(ref=cs3spr.Reference(path=filepath))

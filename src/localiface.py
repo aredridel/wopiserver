@@ -117,7 +117,7 @@ def readfile(_endpoint, filepath, _userid):
     yield IOError(e)
 
 
-def writefile(_endpoint, filepath, _userid, content, _noversion=1):
+def writefile(_endpoint, filepath, _userid, content, _noversion=1, nooverwrite=0):
   '''Write a file via xroot on behalf of the given userid. The entire content is written
      and any pre-existing file is deleted (or moved to the previous version if supported).
      On local storage, versioning is disabled, therefore the _noversion argument is ignored.'''
@@ -128,7 +128,17 @@ def writefile(_endpoint, filepath, _userid, content, _noversion=1):
   log.debug('msg="Invoking writeFile" filepath="%s" size="%d"' % (filepath, size))
   try:
     tstart = time.time()
-    f = open(filepath, mode='wb')
+    if nooverwrite:
+      # apparently there's no way to pass the O_CREAT without O_TRUNC to the python f.open()!
+      # cf. https://stackoverflow.com/questions/38530910/python-open-flags-for-open-or-create
+      try:
+        fd = os.open(filepath, os.O_CREAT | os.O_EXCL)
+        f = os.fdopen(fd, mode='wb')
+      except FileExistsError:
+        log.info('msg="File found on write, failing write with nooverwrite flag" filepath="%s"' % filepath)
+        raise IOError('File exists and nooverwrite flag requested')
+    else:
+      f = open(filepath, mode='wb')
     tend = time.time()
     log.info('msg="File open for write" filepath="%s" elapsedTimems="%.1f"' % (filepath, (tend-tstart)*1000))
     written = f.write(content)
